@@ -1,22 +1,5 @@
-// 初始化用戶付費狀態
-chrome.runtime.onInstalled.addListener(() => {
-    chrome.storage.local.set({ isPaidUser: false }); // 預設免費
-  });
-  
-// 接收 UI 傳來的訊息，檢查或設定付費狀態
+// 接收 UI 傳來的訊息
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-if (message.type === "checkPaidStatus") {
-    chrome.storage.local.get("isPaidUser", (data) => {
-    sendResponse({ isPaidUser: data.isPaidUser });
-    });
-    return true; // 必須返回 true 以允許異步響應
-}
-
-if (message.type === "setPaidStatus") {
-    chrome.storage.local.set({ isPaidUser: message.isPaidUser });
-    sendResponse({ success: true });
-}
-
 if (message.type === "popup") {
     chrome.tabs.create({
     url: chrome.extension.getURL("popup.html")
