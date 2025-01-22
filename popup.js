@@ -41,6 +41,12 @@ document.addEventListener("DOMContentLoaded", () => {
             }
     });
   });
+
+  document.getElementById("last-btn").addEventListener("click", () => {
+    chrome.tabs.create({
+      url: chrome.runtime.getURL(`result.html`),
+    });
+  });
 });
 
 function showBooks(result) {
