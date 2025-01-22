@@ -1,111 +1,80 @@
+chrome.runtime.onInstalled.addListener(() => {
+    chrome.storage.local.set({ isScan: false }); // 預設沒掃描
+  });
+
 // 接收 UI 傳來的訊息
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-if (message.type === "popup") {
-    chrome.tabs.create({
-    url: chrome.extension.getURL("popup.html")
-  })
-}
+    if (message.type === "popup") {
+        chrome.tabs.create({
+        url: chrome.extension.getURL("popup.html")
+        })
+    }
 
-if (message.type === "fetchAllLinks") {
-    const fetchAllLinks = async () => {
-        const results = [];
+    if (message.type === "checkScanStatus") {
+        chrome.storage.local.get("isScan", (data) => {
+            sendResponse({ isScan: data.isScan });
+        });
+        return true; // 必須返回 true 以允許異步響應
+    }    
 
-        let offset = 0;
-        let hasMoreContent = true;
-        let limit = 48;
+    if (message.type === "fetchAllLinks") {
+        chrome.storage.local.set({ isScan: true });
+        const fetchAllLinks = async () => {
+            const results = [];
 
-        while (hasMoreContent) {
-            try {
-                const response = await fetch(`https://gateway.tw.kakaowebtoon.com/history/v2/views/purchased-content?offset=${offset}&limit=${limit}`, {
-                    credentials: "include",
-                });
-                const text = await response.text();
-                // console.log(`${i}`, text);
-    
-                // 解析 JSON 字串為 JavaScript 物件
-                const data = JSON.parse(text);
-                if (Array.isArray(data.data)) {
-                    for (let i = 0; i < data.data.length; i++) {
-                        // console.log(`${i}`, data.data[i]);
-                        // 提取 ticketCount 的值
-                        const ticketCount = data.data[i].remainTicketCount;
-                        const content = data.data[i].content;
-                        // console.log(`${i}`, ticketCount);
-                        if (parseInt(ticketCount, 10) > 0) {
-                            results.push({ title: content.title, url: `/content/${content.seoId}/${content.id}`, ticketCount: ticketCount });
+            let offset = 0;
+            let hasMoreContent = true;
+            let limit = 48;
+
+            while (hasMoreContent) {
+                try {
+                    const response = await fetch(`https://gateway.tw.kakaowebtoon.com/history/v2/views/purchased-content?offset=${offset}&limit=${limit}`, {
+                        credentials: "include",
+                    });
+                    const text = await response.text();
+                    // console.log(`${i}`, text);
+        
+                    // 解析 JSON 字串為 JavaScript 物件
+                    const data = JSON.parse(text);
+                    if (Array.isArray(data.data)) {
+                        for (let i = 0; i < data.data.length; i++) {
+                            // console.log(`${i}`, data.data[i]);
+                            // 提取 ticketCount 的值
+                            const ticketCount = data.data[i].remainTicketCount;
+                            const content = data.data[i].content;
+                            // console.log(`${i}`, ticketCount);
+                            if (parseInt(ticketCount, 10) > 0) {
+                                results.push({ title: content.title, url: `/content/${content.seoId}/${content.id}`, ticketCount: ticketCount });
+                            }
                         }
+                        if (data.data.length < limit) {
+                            hasMoreContent = false;
+                        }
+                    } else {
+                        console.error("data.data 不是一個陣列", data.data);
+                        return { success: false, error: "data.data 不是一個陣列" };
                     }
-                    if (data.data.length < limit) {
-                        hasMoreContent = false;
-                    }
-                } else {
-                    console.error("data.data 不是一個陣列", data.data);
-                    return { success: false, error: "data.data 不是一個陣列" };
+                } catch (error) {
+                    console.error("抓取作品列表失敗", error);
+                    return { success: false, error: error };
                 }
-            } catch (error) {
-                console.error("抓取作品列表失敗", error);
-                return { success: false, error: error };
+                offset += limit;
+
+                // 延遲 3 秒
+                if (hasMoreContent) {
+                    await new Promise((resolve) => setTimeout(resolve, 3000));
+                }
             }
-            offset += limit;
-
-            // 延遲 3 秒
-            if (hasMoreContent) {
-                await new Promise((resolve) => setTimeout(resolve, 3000));
-            }
-        }
-        return { success: true, results: results };
-    };
-
-    fetchAllLinks().then((results) => {
-        sendResponse(results);
-    });
-    return true; // 必須返回 true 以允許異步處理
-}
-
-if (message.type === "fetchContentData") {
-    const { links } = message;
-
-    // 串行處理每個漫畫頁面的請求
-    const fetchDataWithDelay = async () => {
-        const results = [];
-        for (let i = 0; i < links.length; i++) {
-        const link = links[i].split("/")[3];
-
-        // 爬取漫畫頁面內容
-        try {
-            const response = await fetch(`https://gateway.tw.kakaowebtoon.com/ticket/v2/views/content-home/available-tickets?contentId=${link}`, {
-                credentials: "include",
+            // 將結果存儲到 Local Storage
+            chrome.storage.local.set( { scrapedData: JSON.stringify(results) }, () => {
+                return { success: true };
             });
-            const text = await response.text();
-            // console.log(`${i}`, text);
+        };
 
-            // 解析 JSON 字串為 JavaScript 物件
-            const data = JSON.parse(text);
-
-            // 提取 ticketCount 的值
-            const ticketCount = data.data.ticketCount;
-
-            if (parseInt(ticketCount, 10) > 0) {
-                results.push({ title: links[i].split("/")[2], url: links[i], ticketCount: ticketCount });
-            }
-        } catch (error) {
-            console.error(`爬取失敗: ${link}`, error);
-            return { success: false, error: error };
-        }
-
-        // 延遲 3 秒
-        if (i < links.length - 1) {
-            await new Promise((resolve) => setTimeout(resolve, 3000));
-        }
-        }
-        return { success: true, results: results };
-    };
-
-    // 開始執行爬取任務
-    fetchDataWithDelay().then((results) => {
-        sendResponse(results);
-    });
-
-    return true; // 必須返回 true 以允許異步處理
+        fetchAllLinks().then((results) => {
+            chrome.storage.local.set({ isScan: false });
+            sendResponse(results);
+        });
+        return true; // 必須返回 true 以允許異步處理
     }
 });

@@ -1,11 +1,12 @@
+let scrapedData = []; // 用於排序的數據副本
 // 從 background.js 傳遞的數據中渲染結果
-const data = JSON.parse(localStorage.getItem("scrapedData"));
-let currentData = [...data]; // 用於排序的數據副本
-
-const tableBody = document.querySelector('#result-table tbody');
-renderTable(data)
+chrome.storage.local.get("scrapedData", (data) => {
+    scrapedData = [...JSON.parse(data.scrapedData)]; // 用於排序的數據副本
+    renderTable(scrapedData)
+});
 
 function renderTable(data) {
+    const tableBody = document.querySelector('#result-table tbody');
     tableBody.innerHTML = ""; // 清空表格
     data.forEach((item, index) => {
         const row = document.createElement('tr');
@@ -20,11 +21,11 @@ function renderTable(data) {
 
 // 按鈕事件綁定
 document.getElementById("default-sort").addEventListener("click", () => {
-    currentData = [...data]; // 恢復為預設順序
-    renderTable(currentData);
+    renderTable(scrapedData);
 });
 
 document.getElementById("sort-by-ticket").addEventListener("click", () => {
+    let currentData = [...scrapedData]; // 恢復為預設順序
     currentData.sort((a, b) => b.ticketCount - a.ticketCount); // 按閱讀券數量降序排序
     renderTable(currentData);
 });
