@@ -1,6 +1,12 @@
 document.addEventListener("DOMContentLoaded", () => {
-    const result = document.getElementById("result");
-
+  const lastBtn = document.getElementById("last-btn");
+    const result = document.getElementById("result");    
+    // 檢查是否已有資料
+    if (localStorage.getItem("scrapedData") != null) {
+      lastBtn.style.display = "block";
+    } else {
+      lastBtn.style.display = "none";
+    }
     document.getElementById("popup-btn").addEventListener("click", () => {
       result.textContent = "掃描中⋯⋯";
         // 假設獲取的數據（測試用）
@@ -20,7 +26,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
-  document.getElementById("last-btn").addEventListener("click", () => {
+  lastBtn.addEventListener("click", () => {
     chrome.tabs.create({
       url: chrome.runtime.getURL(`result.html`),
     });
