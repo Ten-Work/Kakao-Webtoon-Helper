@@ -31,7 +31,7 @@ if (message.type === "fetchAllLinks") {
         let hasMoreContent = true;
         let limit = 48;
 
-        // while (hasMoreContent) {
+        while (hasMoreContent) {
             try {
                 const response = await fetch(`https://gateway.tw.kakaowebtoon.com/history/v2/views/purchased-content?offset=${offset}&limit=${limit}`, {
                     credentials: "include",
@@ -66,11 +66,11 @@ if (message.type === "fetchAllLinks") {
             offset += limit;
 
             // 延遲 3 秒
-            // if (hasMoreContent) {
-            //     await new Promise((resolve) => setTimeout(resolve, 3000));
-            // }
-            return { success: true, results: results };
-        // }
+            if (hasMoreContent) {
+                await new Promise((resolve) => setTimeout(resolve, 3000));
+            }
+        }
+        return { success: true, results: results };
     };
 
     fetchAllLinks().then((results) => {
