@@ -1,5 +1,6 @@
 // 從 background.js 傳遞的數據中渲染結果
 const data = JSON.parse(localStorage.getItem("scrapedData"));
+let currentData = [...data]; // 用於排序的數據副本
 
 const tableBody = document.querySelector('#result-table tbody');
 renderTable(data)
