@@ -2,6 +2,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const freeUserDiv = document.getElementById("free-user");
     const paidUserDiv = document.getElementById("paid-user");
     const upgradeBtn = document.getElementById("upgrade-btn");
+    const result = document.getElementById("result");
   
     // 檢查用戶是否付費
     chrome.runtime.sendMessage({ type: "checkPaidStatus" }, (response) => {
@@ -24,20 +25,27 @@ document.addEventListener("DOMContentLoaded", () => {
 
     document.getElementById("popup-btn").addEventListener("click", () => {
         // 假設獲取的數據（測試用）
-        const bookLinks = ["/content/偉大的夙願/17", "/content/尋找父親的兒子/498"];
-        chrome.runtime.sendMessage({ type: "fetchContentData", links: bookLinks }, (results) => {
-        const freeList = document.getElementById("book-list");
-        const detailedList = document.getElementById("detailed-book-list");
-    
-        results.forEach((result) => {
-            const freeItem = document.createElement("li");
-            freeItem.textContent = result.url.split("/")[2]; // 作品名
-            freeList.appendChild(freeItem);
-    
-            const paidItem = document.createElement("li");
-            paidItem.innerHTML = `<a href="https://tw.kakaowebtoon.com${result.url}" target="_blank">${result.url.split("/")[2]}</a> - ${result.coupon}`;
-            detailedList.appendChild(paidItem);
-        });
-      });
+        // const bookLinks = ["/content/偉大的夙願/17", "/content/尋找父親的兒子/498"];
+        // chrome.runtime.sendMessage({ type: "fetchContentData", links: bookLinks }, (results) => {
+        //   showBooks(results);
+        // });
+        
+        chrome.runtime.sendMessage({ type: "fetchAllLinks"} , 
+          (response) => {
+            if (response.success) {
+              result.textContent = "掃描完成，結果已顯示在新標籤頁。";
+              showBooks(response.results);
+            } else {
+              result.textContent = "掃描失敗。";
+            }
     });
+  });
 });
+
+function showBooks(result) {
+    // 將結果存儲到 Local Storage
+  localStorage.setItem("scrapedData", JSON.stringify(result));
+  chrome.tabs.create({
+    url: chrome.runtime.getURL(`result.html`),
+  });
+}

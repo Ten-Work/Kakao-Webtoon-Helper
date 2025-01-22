@@ -25,41 +25,56 @@ if (message.type === "popup") {
 
 if (message.type === "fetchAllLinks") {
     const fetchAllLinks = async () => {
-    const collectedLinks = new Set(); // 用來收集已發現的作品連結
+        const results = [];
 
-    try {
+        let offset = 0;
         let hasMoreContent = true;
+        let limit = 48;
 
-        while (hasMoreContent) {
-        // 模擬滾動到底部
-        window.scrollTo(0, document.body.scrollHeight);
+        // while (hasMoreContent) {
+            try {
+                const response = await fetch(`https://gateway.tw.kakaowebtoon.com/history/v2/views/purchased-content?offset=${offset}&limit=${limit}`, {
+                    credentials: "include",
+                });
+                const text = await response.text();
+                // console.log(`${i}`, text);
+    
+                // 解析 JSON 字串為 JavaScript 物件
+                const data = JSON.parse(text);
+                if (Array.isArray(data.data)) {
+                    for (let i = 0; i < data.data.length; i++) {
+                        // console.log(`${i}`, data.data[i]);
+                        // 提取 ticketCount 的值
+                        const ticketCount = data.data[i].remainTicketCount;
+                        const content = data.data[i].content;
+                        // console.log(`${i}`, ticketCount);
+                        if (parseInt(ticketCount, 10) > 0) {
+                            results.push({ title: content.title, url: `/content/${content.seoId}/${content.id}`, ticketCount: ticketCount });
+                        }
+                    }
+                    if (data.data.length < limit) {
+                        hasMoreContent = false;
+                    }
+                } else {
+                    console.error("data.data 不是一個陣列", data.data);
+                    return { success: false, error: "data.data 不是一個陣列" };
+                }
+            } catch (error) {
+                console.error("抓取作品列表失敗", error);
+                return { success: false, error: error };
+            }
+            offset += limit;
 
-        // 等待一段時間，讓新內容加載
-        await new Promise((resolve) => setTimeout(resolve, 3000));
-
-        // 提取新內容的 <a> 元素
-        const anchors = Array.from(
-            document.querySelectorAll('a[href^="/content/"]')
-        );
-
-        // 確保新的 <a> 元素被加入
-        anchors.forEach((a) => collectedLinks.add(a.getAttribute("href")));
-
-        // 判斷是否還有更多內容
-        const loadMoreIndicator = document.querySelector(".loading-spinner");
-        hasMoreContent = Boolean(loadMoreIndicator);
-        }
-
-        // 返回收集的所有連結
-        return Array.from(collectedLinks);
-    } catch (error) {
-        console.error("抓取作品列表失敗", error);
-        return [];
-    }
+            // 延遲 3 秒
+            // if (hasMoreContent) {
+            //     await new Promise((resolve) => setTimeout(resolve, 3000));
+            // }
+            return { success: true, results: results };
+        // }
     };
 
-    fetchAllLinks().then((links) => {
-    sendResponse({ links });
+    fetchAllLinks().then((results) => {
+        sendResponse(results);
     });
     return true; // 必須返回 true 以允許異步處理
 }
@@ -79,7 +94,7 @@ if (message.type === "fetchContentData") {
                 credentials: "include",
             });
             const text = await response.text();
-            console.log(`${i}`, text);
+            // console.log(`${i}`, text);
 
             // 解析 JSON 字串為 JavaScript 物件
             const data = JSON.parse(text);
@@ -88,10 +103,11 @@ if (message.type === "fetchContentData") {
             const ticketCount = data.data.ticketCount;
 
             if (parseInt(ticketCount, 10) > 0) {
-                results.push({ url: links[i], coupon: `${ticketCount}張` });
+                results.push({ title: links[i].split("/")[2], url: links[i], ticketCount: ticketCount });
             }
         } catch (error) {
             console.error(`爬取失敗: ${link}`, error);
+            return { success: false, error: error };
         }
 
         // 延遲 3 秒
@@ -99,7 +115,7 @@ if (message.type === "fetchContentData") {
             await new Promise((resolve) => setTimeout(resolve, 3000));
         }
         }
-        return results;
+        return { success: true, results: results };
     };
 
     // 開始執行爬取任務
