@@ -2,11 +2,13 @@ document.addEventListener("DOMContentLoaded", () => {
   const lastBtn = document.getElementById("last-btn");
   const result = document.getElementById("result");    
     // 檢查是否已有資料
-    if (chrome.storage.local.get("scrapedData") != null) {
-      lastBtn.style.display = "block";
-    } else {
-      lastBtn.style.display = "none";
-    }
+    chrome.storage.local.get("scrapedData", (data) => {
+      if (data.scrapedData) {
+        lastBtn.style.display = "block";
+      } else {
+        lastBtn.style.display = "none";
+      }
+    });
     // 檢查是否掃描中
     chrome.runtime.sendMessage({ type: "checkScanStatus" }, (response) => {
       if (response.isScan) {
