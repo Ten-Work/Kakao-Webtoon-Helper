@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Kakao Webtoon Helper",
-  "version": "1.0",
+  "version": "2.0",
   "description": "掃描 Kakao Webtoon 的閱讀券資訊。",
   "permissions": ["storage"],
   "host_permissions": ["https://*.kakaowebtoon.com/*"],
