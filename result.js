@@ -7,6 +7,8 @@ chrome.storage.local.get("scrapedData", (data) => {
 
 function renderTable(data) {
     const tableBody = document.querySelector('#result-table tbody');
+    const summary = document.getElementById('summary');
+    let coupon = 0
     tableBody.innerHTML = ""; // 清空表格
     data.forEach((item, index) => {
         const row = document.createElement('tr');
@@ -16,7 +18,9 @@ function renderTable(data) {
         <td>${item.ticketCount}張</td>
         `;
         tableBody.appendChild(row);
+        coupon += item.ticketCount;
     });
+    summary.textContent = `總計${data.length}件作品，${coupon}張閱讀券未用畢。`
 }
 
 // 按鈕事件綁定
