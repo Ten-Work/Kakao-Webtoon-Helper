@@ -4,6 +4,11 @@ chrome.storage.local.get("scrapedData", (data) => {
     scrapedData = [...JSON.parse(data.scrapedData)]; // 用於排序的數據副本
     renderTable(scrapedData)
 });
+chrome.storage.local.get("scrapedDataTime", (data) => {
+    if (data.scrapedDataTime) {
+        document.getElementById('summaryTime').textContent = `掃描時間：${new Date(data.scrapedDataTime).toLocaleTimeString()}`;
+    }
+});
 
 function renderTable(data) {
     const tableBody = document.querySelector('#result-table tbody');

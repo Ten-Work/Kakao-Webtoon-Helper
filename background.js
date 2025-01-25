@@ -66,7 +66,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 }
             }
             // 將結果存儲到 Local Storage
-            chrome.storage.local.set( { scrapedData: JSON.stringify(results) }, () => {
+            chrome.storage.local.set( { scrapedData: JSON.stringify(results), scrapedDataTime: Date.now() }, () => {
                 return { success: true };
             });
         };
