@@ -18,3 +18,4 @@
 
 ## 創作者贊助
 [![截圖 2025-01-24 晚上9 22 48](https://github.com/user-attachments/assets/238036a9-a415-4d09-a247-598bf1b02126)](https://elfcups.bobaboba.me)
+### 在贊助時留下電子信箱，將寄送更多功能的Pro版本給您。
